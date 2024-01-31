@@ -1,26 +1,8 @@
-# Terraform Configuration for AWS VPC, EC2 and RDS
+4. DevOps Operational Excellence
 
-### This project contains terraform configuration files on creating EC2 and RDS instances inside a Custom VPC on AWS. Here is the architecture of what will be created:
-
-![Custom VPC architecture for AWS](https://miro.medium.com/max/700/1*Oxp7FZT4Z9RWqpnJn-hHqw.png)
-
-## Set Up
-### Prerequisites
-- [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) installed and configuration
-- [Terraform](https://www.terraform.io/downloads) installed
-
-### Create the Secrets file
-Create a secrets file called ***secrets.tfvars*** and populate it with the follow secrets:
-  - **db_username** <-- this is going to be the master user for RDS
-  - **db_password** <-- this is going to be the RDS master user's password
-  - **my_ip** <-- this is going to be your public IP
-
-## Running the Configuration
-### Initializing the Terraform directory
-Run the command: `terraform init`
-
-### Apply the Terraform Config to AWS
-Run the command: `terraform apply -var-file="secrets.tfvars"`
-
-### To destroy everything that was created by the Terraform Config
-Run the command: `terraform destroy -var-file="secrets.tfvars"`
+Configure Autoscaling for EC2: Autoscaling helps ensure that you have the correct number of Amazon EC2 instances available to handle the load for your application. You will set up an autoscaling group for your EC2 instances.
+Configure RDS as a Cluster: Amazon RDS makes it easy to set up, operate, and scale a relational database in the cloud. You will configure your RDS instance to operate as a cluster, enhancing its performance and reliability.
+Configure Database Backups: Regular backups are crucial to maintaining data integrity and reliability. You will set up automatic backups for your RDS database.
+Configure S3 Versioning: S3 Versioning keeps multiple variants of an object in the same bucket. You will enable versioning for your S3 bucket to provide additional protection for your stored data.
+Configure CloudWatch Metrics and Alerting: Amazon CloudWatch provides data and actionable insights to monitor your applications, understand and respond to system-wide performance changes, optimize resource utilization, and get a unified view of operational health. You will configure CloudWatch to monitor your resources and set up alerts for specific conditions.
+Prepare a Runbook: A runbook is a compilation of routine procedures and operations that the system administrators or operators in an IT environment follow. You will prepare a runbook for your cloud configuration, detailing the procedures for common tasks and troubleshooting.
