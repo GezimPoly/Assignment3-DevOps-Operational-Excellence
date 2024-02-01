@@ -15,6 +15,10 @@ provider "aws" {
   region = var.aws_region
 }
 
+provider "aws" {
+  region = "us-west-2"
+  alias  = "replica"
+}
 data "aws_availability_zones" "available" {
   state = "available"
 }
@@ -171,6 +175,7 @@ resource "aws_db_subnet_group" "tutorial_db_subnet_group" {
 resource "aws_db_instance" "tutorial_database" {
   // set to 10
   allocated_storage = var.settings.database.allocated_storage
+  identifier        = "mydb"
 
   engine = var.settings.database.engine
 
@@ -186,7 +191,9 @@ resource "aws_db_instance" "tutorial_database" {
 
   db_subnet_group_name = aws_db_subnet_group.tutorial_db_subnet_group.id
 
-  vpc_security_group_ids = [aws_security_group.tutorial_db_sg.id]
+  vpc_security_group_ids  = [aws_security_group.tutorial_db_sg.id]
+  backup_retention_period = 7
+  storage_encrypted       = true
 
   skip_final_snapshot = var.settings.database.skip_final_snapshot
 }
@@ -234,10 +241,10 @@ resource "aws_eip" "tutorial_web_eip" {
 }
 
 
-
+//Configure Autoscaling for EC2
 resource "aws_launch_configuration" "example" {
   name = "tutorial_launch_autoacaling"
-  //qetu mvyne me e ndrru
+
   image_id      = data.aws_ami.ubuntu.id
   instance_type = "t2.micro"
 
@@ -254,12 +261,6 @@ resource "aws_autoscaling_group" "example" {
   //edhe qetu
   vpc_zone_identifier = [aws_subnet.tutorial_public_subnet[0].id, aws_subnet.tutorial_private_subnet[0].id]
 
-  #  ["${aws_subnet.tutorial_public_subnet.*.id}"]
-
-
-  # "${aws_subnet.tutorial_public_subnet[count.index].id}"
-  # [aws_subnet.tutorial_public_subnet,aws_subnet.tutorial_private_subnet]
-
   launch_configuration = aws_launch_configuration.example.id
 
   health_check_type         = "EC2"
@@ -267,6 +268,7 @@ resource "aws_autoscaling_group" "example" {
   force_delete              = true
 }
 
+//Configure RDS as a Cluster: 
 resource "aws_rds_cluster" "default" {
   cluster_identifier      = "aurora-cluster-demo"
   availability_zones      = ["us-east-1a", "us-east-1b", "us-east-1c"]
@@ -277,6 +279,7 @@ resource "aws_rds_cluster" "default" {
   preferred_backup_window = "07:00-09:00"
 }
 
+/// auto backups
 
 resource "aws_kms_key" "tutorial_database" {
   description = "Encryption key for automated backups"
@@ -286,8 +289,39 @@ resource "aws_kms_key" "tutorial_database" {
 
 resource "aws_db_instance_automated_backups_replication" "tutorial_database" {
   source_db_instance_arn = aws_db_instance.tutorial_database.arn
-  //??
-  kms_key_id             = aws_kms_key.tutorial_database.arn
+  kms_key_id = aws_kms_key.tutorial_database.arn
 
   provider = aws.replica
+}
+ 
+ //Configure S3 Versioning:
+
+ resource "aws_s3_bucket" "example" {
+  bucket = "example-bucket"
+}
+
+resource "aws_s3_bucket_acl" "example" {
+  bucket = aws_s3_bucket.example.id
+  acl    = "private"
+}
+
+resource "aws_s3_bucket_versioning" "versioning_example" {
+  bucket = aws_s3_bucket.example.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+//Configure CloudWatch Metrics and Alerting
+resource "aws_cloudwatch_metric_alarm" "foobar" {
+  alarm_name                = "terraform-test-foobar5"
+  comparison_operator       = "GreaterThanOrEqualToThreshold"
+  evaluation_periods        = 2
+  metric_name               = "CPUUtilization"
+  namespace                 = "AWS/EC2"
+  period                    = 120
+  statistic                 = "Average"
+  threshold                 = 80
+  alarm_description         = "This metric monitors ec2 cpu utilization"
+  insufficient_data_actions = []
 }
